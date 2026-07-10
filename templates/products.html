@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block title %}Shop &mdash; ServiceHub{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <h1>Shop</h1>
+  <p>All products currently available.</p>
+</div>
+
+<form method="get" style="margin-bottom:24px; display:flex; gap:10px;">
+  <input type="text" name="q" placeholder="Search products..." value="{{ q }}" style="max-width:320px;">
+  <button class="btn btn-outline" type="submit">Search</button>
+</form>
+
+{% if products %}
+<div class="grid grid-4">
+  {% for p in products %}
+  <div class="product-card">
+    {% if p.image_url %}
+    <div class="thumb thumb-img" style="background-image:url('{{ p.image_url }}');"></div>
+    {% else %}
+    <div class="thumb">{{ p.name[:2].upper() }}</div>
+    {% endif %}
+    <div class="body">
+      <h3>{{ p.name }}</h3>
+      <div class="desc">{{ p.description }}</div>
+      <div class="price">&#8377;{{ '%.2f'|format(p.price) }}</div>
+      <a href="{{ url_for('product_detail', product_id=p.id) }}" class="btn btn-primary btn-sm">View</a>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty">
+  <h3>No products found</h3>
+  <p>Try a different search, or add products to the database.</p>
+</div>
+{% endif %}
+
+{% endblock %}

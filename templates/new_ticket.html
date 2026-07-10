@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}New Ticket &mdash; ServiceHub{% endblock %}
+{% block container_extra %} narrow{% endblock %}
+{% block content %}
+
+<div class="page-header"><h1>Raise a support ticket</h1><p>Tell us what went wrong and we'll get on it.</p></div>
+
+<form method="post" class="card">
+  <div class="form-group">
+    <label>Subject</label>
+    <input type="text" name="subject" required placeholder="e.g. Order arrived damaged">
+  </div>
+  <div class="form-group">
+    <label>Priority</label>
+    <select name="priority">
+      <option value="low">Low</option>
+      <option value="normal" selected>Normal</option>
+      <option value="high">High</option>
+      <option value="urgent">Urgent</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label>Describe the issue</label>
+    <textarea name="description" required placeholder="What happened? Include order number if relevant."></textarea>
+  </div>
+  <button class="btn btn-amber" type="submit">Submit ticket</button>
+</form>
+
+{% endblock %}

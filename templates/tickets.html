@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}Support Tickets &mdash; ServiceHub{% endblock %}
+{% block content %}
+
+<div class="page-header" style="display:flex; justify-content:space-between; align-items:end;">
+  <div>
+    <h1>{{ 'All tickets' if current_user.is_staff else 'My support tickets' }}</h1>
+    <p>{{ 'Every ticket raised by customers.' if current_user.is_staff else 'Track issues you\'ve reported and their status.' }}</p>
+  </div>
+  <a href="{{ url_for('new_ticket') }}" class="btn btn-amber">New ticket</a>
+</div>
+
+{% if tickets %}
+  {% for t in tickets %}
+  <a href="{{ url_for('ticket_detail', ticket_id=t.id) }}" style="text-decoration:none; color:inherit;">
+    <div class="stub">
+      <div class="stub-tag">TCK-{{ '%04d'|format(t.id) }}</div>
+      <div class="stub-main">
+        <h3>{{ t.subject }}</h3>
+        <span class="badge badge-{{ t.status }}">{{ t.status.replace('_',' ') }}</span>
+        <div class="meta">
+          <span>Priority: {{ t.priority }}</span>
+          <span>Opened {{ t.created_at.strftime('%d %b %Y') }}</span>
+          {% if current_user.is_staff %}<span>By {{ t.customer.name }}</span>{% endif %}
+        </div>
+      </div>
+    </div>
+  </a>
+  {% endfor %}
+{% else %}
+<div class="empty">
+  <h3>No tickets</h3>
+  <p>When you run into a problem, <a href="{{ url_for('new_ticket') }}" style="color:var(--navy); font-weight:600;">raise a ticket</a> and we'll help you resolve it.</p>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}{{ product.name }} &mdash; ServiceHub{% endblock %}
+{% block content %}
+
+<div class="card" style="display:flex; gap:32px; flex-wrap:wrap;">
+  <div style="flex:1; min-width:240px;">
+    {% if product.image_url %}
+    <div class="thumb thumb-img" style="height:220px; border-radius:6px; background-image:url('{{ product.image_url }}');"></div>
+    {% else %}
+    <div class="thumb" style="height:220px; border-radius:6px;">{{ product.name[:2].upper() }}</div>
+    {% endif %}
+  </div>
+  <div style="flex:1; min-width:260px;">
+    <h1 style="margin-top:0;">{{ product.name }}</h1>
+    <p style="color:var(--ink-soft);">{{ product.description }}</p>
+    <div class="price" style="font-size:24px; margin:16px 0;">&#8377;{{ '%.2f'|format(product.price) }}</div>
+    <p style="font-size:13px; color:var(--ink-soft);">{{ product.stock }} in stock</p>
+
+    <form method="post" action="{{ url_for('add_to_cart', product_id=product.id) }}" style="display:flex; gap:10px; align-items:end; margin-top:16px;">
+      <div>
+        <label>Quantity</label>
+        <input type="number" name="quantity" value="1" min="1" max="{{ product.stock }}" style="width:90px;">
+      </div>
+      <button class="btn btn-amber" type="submit" {% if product.stock == 0 %}disabled{% endif %}>Add to cart</button>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

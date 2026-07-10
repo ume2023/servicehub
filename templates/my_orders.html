@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}My Orders &mdash; ServiceHub{% endblock %}
+{% block content %}
+
+<div class="page-header"><h1>My orders</h1></div>
+
+{% if orders %}
+  {% for o in orders %}
+  <div class="stub">
+    <div class="stub-tag">ORD-{{ '%04d'|format(o.id) }}</div>
+    <div class="stub-main">
+      <h3>{{ o.items|length }} item{{ 's' if o.items|length != 1 else '' }} &mdash; &#8377;{{ '%.2f'|format(o.total) }}</h3>
+      <span class="badge badge-{{ o.status }}">{{ o.status.replace('_',' ') }}</span>
+      <div class="meta">
+        <span>Placed {{ o.created_at.strftime('%d %b %Y') }}</span>
+        <span>{{ ", ".join(o.items|map(attribute='product.name')|list) }}</span>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+{% else %}
+<div class="empty">
+  <h3>No orders yet</h3>
+  <p><a href="{{ url_for('products') }}" style="color:var(--navy); font-weight:600;">Browse products</a> to place your first order.</p>
+</div>
+{% endif %}
+
+{% endblock %}

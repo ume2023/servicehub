@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}Create account &mdash; ServiceHub{% endblock %}
+{% block container_extra %} narrow{% endblock %}
+{% block content %}
+
+<div class="page-header"><h1>Create your account</h1></div>
+
+<form method="post" class="card">
+  <div class="form-group">
+    <label>Name</label>
+    <input type="text" name="name" required>
+  </div>
+  <div class="form-group">
+    <label>Email</label>
+    <input type="email" name="email" required>
+  </div>
+  <div class="form-group">
+    <label>Password</label>
+    <input type="password" name="password" required minlength="6">
+  </div>
+  <button class="btn btn-amber" type="submit" style="width:100%;">Create account</button>
+</form>
+<p style="text-align:center; margin-top:16px; font-size:14px;">Already have an account? <a href="{{ url_for('login') }}" style="color:var(--navy); font-weight:600;">Log in</a></p>
+
+{% endblock %}
