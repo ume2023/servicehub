@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}ServiceHub &mdash; Products & Support{% endblock %}
+{% block content %}
+
+<div class="hero">
+  <h1>Buy the product. Get it fixed here too.</h1>
+  <p>Browse our catalogue, place an order, and if anything ever goes wrong, open a support ticket and track it right from your account.</p>
+  <div class="actions">
+    <a href="{{ url_for('products') }}" class="btn btn-amber">Browse products</a>
+    {% if current_user.is_authenticated %}
+      <a href="{{ url_for('new_ticket') }}" class="btn btn-outline" style="border-color:#3d4f5c;color:#fff;">Raise a ticket</a>
+    {% else %}
+      <a href="{{ url_for('register') }}" class="btn btn-outline" style="border-color:#3d4f5c;color:#fff;">Create account</a>
+    {% endif %}
+  </div>
+</div>
+
+<h2 style="font-size:20px;">Latest products</h2>
+{% if products %}
+<div class="grid grid-4">
+  {% for p in products %}
+  <div class="product-card">
+    {% if p.image_url %}
+    <div class="thumb thumb-img" style="background-image:url('{{ p.image_url }}');"></div>
+    {% else %}
+    <div class="thumb">{{ p.name[:2].upper() }}</div>
+    {% endif %}
+    <div class="body">
+      <h3>{{ p.name }}</h3>
+      <div class="desc">{{ p.description }}</div>
+      <div class="price">&#8377;{{ '%.2f'|format(p.price) }}</div>
+      <a href="{{ url_for('product_detail', product_id=p.id) }}" class="btn btn-primary btn-sm">View</a>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty">
+  <h3>No products yet</h3>
+  <p>Run <code>flask seed</code> to add demo products, or add your own in the database.</p>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{% block title %}ServiceHub{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+  <meta name="theme-color" content="#16232E">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192.png') }}">
+</head>
+<body>
+  <div class="topbar">
+    <a href="{{ url_for('index') }}" class="brand">
+      <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo" class="brand-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-flex';">
+      <span class="brand-fallback"><span class="mark"></span>ServiceHub</span>
+    </a>
+    <div class="nav-links">
+      <a href="{{ url_for('products') }}">Shop</a>
+      <a href="{{ url_for('support_hub') }}">Support</a>
+      <a href="{{ url_for('calibration') }}">Calibration</a>
+      {% if current_user.is_authenticated %}
+        <a href="{{ url_for('tickets') }}">My Tickets</a>
+        {% if current_user.is_staff %}
+          <a href="{{ url_for('admin_orders') }}">All Orders</a>
+        {% else %}
+          <a href="{{ url_for('my_orders') }}">Orders</a>
+        {% endif %}
+        <a href="{{ url_for('cart') }}">Cart</a>
+        <a href="{{ url_for('logout') }}">Log out</a>
+      {% else %}
+        <a href="{{ url_for('cart') }}">Cart</a>
+        <a href="{{ url_for('login') }}" class="nav-cta">Log in</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="container{% block container_extra %}{% endblock %}">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="flash flash-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </div>
+
+  <footer>ServiceHub &mdash; support and products in one place.</footer>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register("{{ url_for('static', filename='sw.js') }}").catch(function(){});
+    }
+  </script>
+</body>
+</html>
