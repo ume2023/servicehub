@@ -23,6 +23,7 @@
         <a href="{{ url_for('tickets') }}">My Tickets</a>
         {% if current_user.is_staff %}
           <a href="{{ url_for('admin_orders') }}">All Orders</a>
+          <a href="{{ url_for('admin_products') }}">Manage Products</a>
         {% else %}
           <a href="{{ url_for('my_orders') }}">Orders</a>
         {% endif %}

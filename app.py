@@ -327,6 +327,34 @@ def admin_order_detail(order_id):
 
 
 # ---------------------------------------------------------------------------
+# Staff: product management
+# ---------------------------------------------------------------------------
+
+@app.route('/admin/products')
+@login_required
+def admin_products():
+    if not current_user.is_staff:
+        flash('Staff access only.', 'error')
+        return redirect(url_for('index'))
+    all_products = Product.query.order_by(Product.id).all()
+    return render_template('admin_products.html', products=all_products)
+
+
+@app.route('/admin/products/<int:product_id>/delete', methods=['POST'])
+@login_required
+def admin_delete_product(product_id):
+    if not current_user.is_staff:
+        flash('Staff access only.', 'error')
+        return redirect(url_for('index'))
+    product = Product.query.get_or_404(product_id)
+    name = product.name
+    db.session.delete(product)
+    db.session.commit()
+    flash(f'Deleted "{name}".', 'success')
+    return redirect(url_for('admin_products'))
+
+
+# ---------------------------------------------------------------------------
 # Support hub: free (warranty) vs paid support
 # ---------------------------------------------------------------------------
 

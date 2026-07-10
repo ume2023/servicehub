@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}Manage Products &mdash; ServiceHub{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <h1>Manage products</h1>
+  <p>Remove products you no longer want listed on the site.</p>
+</div>
+
+{% if products %}
+<table class="card">
+  <thead><tr><th>ID</th><th>Name</th><th>Price</th><th>Stock</th><th></th></tr></thead>
+  <tbody>
+    {% for p in products %}
+    <tr>
+      <td>{{ p.id }}</td>
+      <td>{{ p.name }}</td>
+      <td>&#8377;{{ '%.2f'|format(p.price) }}</td>
+      <td>{{ p.stock }}</td>
+      <td>
+        <form method="post" action="{{ url_for('admin_delete_product', product_id=p.id) }}" onsubmit="return confirm('Delete {{ p.name }}? This cannot be undone.');" style="display:inline;">
+          <button type="submit" class="btn btn-sm" style="background:#F0D9D9; color:var(--red);">Delete</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty">
+  <h3>No products</h3>
+</div>
+{% endif %}
+
+{% endblock %}
