@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block title %}Support &mdash; ServiceHub{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <h1>Support</h1>
+  <p>Check if your product is under warranty for free support, or book paid support anytime.</p>
+</div>
+
+<div class="grid grid-2" style="gap:24px;">
+
+  <!-- FREE / WARRANTY SUPPORT -->
+  <div class="card">
+    <span class="badge badge-resolved" style="margin-bottom:10px;">Free</span>
+    <h2 style="margin:0 0 6px; font-size:19px;">Warranty support</h2>
+    <p style="color:var(--ink-soft); font-size:14px; margin:0 0 18px;">
+      Products are covered free for 1 year from their manufacturing date. Enter your unit's serial number to check.
+    </p>
+
+    <form method="post" action="{{ url_for('check_warranty') }}" style="display:flex; gap:8px;">
+      <input type="text" name="serial_number" placeholder="e.g. SN-2025-00123" value="{{ searched_serial or '' }}" required style="flex:1;">
+      <button class="btn btn-primary" type="submit">Check</button>
+    </form>
+
+    {% if warranty_result == 'not_found' %}
+    <div class="flash flash-error" style="margin-top:16px;">
+      No product found with serial number <strong>{{ searched_serial }}</strong>. Double-check the number printed on your unit, or contact us if you think this is a mistake.
+    </div>
+    {% elif warranty_result == 'under_warranty' %}
+    <div class="flash flash-success" style="margin-top:16px;">
+      Good news — <strong>{{ unit.product.name }}</strong> (serial {{ unit.serial_number }}) is under warranty, with {{ unit.days_remaining }} day{{ 's' if unit.days_remaining != 1 else '' }} remaining. Support is free.
+    </div>
+    <a href="{{ url_for('new_ticket', serial_number=unit.serial_number) if current_user.is_authenticated else url_for('login') }}" class="btn btn-amber" style="margin-top:12px; width:100%;">Raise free support ticket</a>
+    {% elif warranty_result == 'expired' %}
+    <div class="flash flash-error" style="margin-top:16px;">
+      <strong>{{ unit.product.name }}</strong> (serial {{ unit.serial_number }}) went out of warranty on {{ unit.warranty_end_date.strftime('%d %b %Y') }}. This would need paid support &mdash; see the option on the right.
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- PAID SUPPORT -->
+  <div class="card">
+    <span class="badge badge-pending" style="margin-bottom:10px;">Paid</span>
+    <h2 style="margin:0 0 6px; font-size:19px;">Call support</h2>
+    <p style="color:var(--ink-soft); font-size:14px; margin:0 0 18px;">
+      Not under warranty, or need help right away? Pay &#8377;{{ '%.0f'|format(price_rupees) }} to get a direct call with our support team.
+    </p>
+    <ul style="color:var(--ink-soft); font-size:14px; padding-left:18px; margin:0 0 18px;">
+      <li>Instant phone number after payment</li>
+      <li>Pay via UPI, card, or netbanking</li>
+      <li>For any product, in or out of warranty</li>
+    </ul>
+    <a href="{{ url_for('call_support') if current_user.is_authenticated else url_for('login') }}" class="btn btn-amber" style="width:100%;">Book call support</a>
+  </div>
+
+</div>
+
+<div class="card" style="margin-top:24px;">
+  <h3 style="margin:0 0 6px; font-size:16px;">Prefer to browse first?</h3>
+  <p style="color:var(--ink-soft); font-size:14px; margin:0;">
+    Check our <a href="{{ url_for('calibration') }}" style="color:var(--navy); font-weight:600;">calibration guides</a> &mdash; many common issues can be fixed by following the video steps.
+  </p>
+</div>
+
+{% endblock %}

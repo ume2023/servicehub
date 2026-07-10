@@ -1,6 +1,7 @@
 import os
+import razorpay
 from datetime import datetime
-from flask import Flask, render_template, redirect, url_for, request, flash, session
+from flask import Flask, render_template, redirect, url_for, request, flash, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -11,6 +12,17 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'change-this-secret-key-in-production'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'servicehub.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Razorpay: set these as real environment variables before going live.
+# Get test keys free at https://dashboard.razorpay.com/#/app/keys after signing up.
+RAZORPAY_KEY_ID = os.environ.get('RAZORPAY_KEY_ID', 'rzp_test_your_key_here')
+RAZORPAY_KEY_SECRET = os.environ.get('RAZORPAY_KEY_SECRET', 'your_test_secret_here')
+razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
+
+# Price for a paid call-support session, in paise (100 paise = ₹1). 50000 = ₹500.
+CALL_SUPPORT_PRICE_PAISE = 50000
+# The phone number revealed to customers after they pay for call support.
+SUPPORT_PHONE_NUMBER = "+91-XXXXXXXXXX"  # <-- change this to your real support number
 
 db = SQLAlchemy(app)
 
@@ -78,6 +90,8 @@ class Ticket(db.Model):
     description = db.Column(db.Text, nullable=False)
     status = db.Column(db.String(30), default='open')  # open, in_progress, resolved, closed
     priority = db.Column(db.String(20), default='normal')  # low, normal, high, urgent
+    is_warranty = db.Column(db.Boolean, default=False)  # True = free support under warranty
+    serial_number = db.Column(db.String(100))  # unit serial number, if a warranty ticket
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow)
     customer = db.relationship('User')
@@ -91,6 +105,52 @@ class TicketReply(db.Model):
     message = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     author = db.relationship('User')
+
+
+class ProductUnit(db.Model):
+    """A specific physical unit of a product, tracked by serial number for warranty checks."""
+    id = db.Column(db.Integer, primary_key=True)
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
+    serial_number = db.Column(db.String(100), unique=True, nullable=False)
+    manufacturing_date = db.Column(db.Date, nullable=False)
+    warranty_days = db.Column(db.Integer, default=365)  # default 1 year warranty
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    product = db.relationship('Product')
+
+    @property
+    def warranty_end_date(self):
+        from datetime import timedelta
+        return self.manufacturing_date + timedelta(days=self.warranty_days)
+
+    @property
+    def is_under_warranty(self):
+        from datetime import date
+        return date.today() <= self.warranty_end_date
+
+    @property
+    def days_remaining(self):
+        from datetime import date
+        return (self.warranty_end_date - date.today()).days
+
+
+class CalibrationVideo(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text)
+    video_url = db.Column(db.String(500), nullable=False)  # YouTube/Vimeo embed link, or direct video URL
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class CallSupportBooking(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    razorpay_order_id = db.Column(db.String(100))
+    razorpay_payment_id = db.Column(db.String(100))
+    amount_paise = db.Column(db.Integer, default=CALL_SUPPORT_PRICE_PAISE)
+    status = db.Column(db.String(20), default='pending')  # pending, paid, failed
+    notes = db.Column(db.Text)  # what the customer wants help with
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    customer = db.relationship('User')
 
 
 @login_manager.user_loader
@@ -267,6 +327,119 @@ def admin_order_detail(order_id):
 
 
 # ---------------------------------------------------------------------------
+# Support hub: free (warranty) vs paid support
+# ---------------------------------------------------------------------------
+
+@app.route('/support')
+def support_hub():
+    return render_template('support_hub.html', price_rupees=CALL_SUPPORT_PRICE_PAISE / 100)
+
+
+@app.route('/support/check-warranty', methods=['POST'])
+def check_warranty():
+    serial = request.form.get('serial_number', '').strip()
+    unit = ProductUnit.query.filter_by(serial_number=serial).first()
+
+    if not unit:
+        return render_template(
+            'support_hub.html',
+            price_rupees=CALL_SUPPORT_PRICE_PAISE / 100,
+            warranty_result='not_found',
+            searched_serial=serial,
+        )
+
+    return render_template(
+        'support_hub.html',
+        price_rupees=CALL_SUPPORT_PRICE_PAISE / 100,
+        warranty_result='under_warranty' if unit.is_under_warranty else 'expired',
+        unit=unit,
+        searched_serial=serial,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Calibration videos
+# ---------------------------------------------------------------------------
+
+@app.route('/calibration')
+def calibration():
+    videos = CalibrationVideo.query.order_by(CalibrationVideo.created_at.desc()).all()
+    return render_template('calibration.html', videos=videos)
+
+
+# ---------------------------------------------------------------------------
+# Paid call support (Razorpay)
+# ---------------------------------------------------------------------------
+
+@app.route('/call-support')
+@login_required
+def call_support():
+    price_rupees = CALL_SUPPORT_PRICE_PAISE / 100
+    my_bookings = CallSupportBooking.query.filter_by(user_id=current_user.id).order_by(CallSupportBooking.created_at.desc()).all()
+    return render_template(
+        'call_support.html',
+        price_rupees=price_rupees,
+        razorpay_key_id=RAZORPAY_KEY_ID,
+        bookings=my_bookings,
+        support_phone=SUPPORT_PHONE_NUMBER,
+    )
+
+
+@app.route('/call-support/create-order', methods=['POST'])
+@login_required
+def create_call_support_order():
+    notes = request.form.get('notes', '').strip()
+
+    razorpay_order = razorpay_client.order.create({
+        'amount': CALL_SUPPORT_PRICE_PAISE,
+        'currency': 'INR',
+        'payment_capture': 1,
+    })
+
+    booking = CallSupportBooking(
+        user_id=current_user.id,
+        razorpay_order_id=razorpay_order['id'],
+        amount_paise=CALL_SUPPORT_PRICE_PAISE,
+        status='pending',
+        notes=notes,
+    )
+    db.session.add(booking)
+    db.session.commit()
+
+    return jsonify({
+        'order_id': razorpay_order['id'],
+        'amount': CALL_SUPPORT_PRICE_PAISE,
+        'key_id': RAZORPAY_KEY_ID,
+        'booking_id': booking.id,
+    })
+
+
+@app.route('/call-support/verify', methods=['POST'])
+@login_required
+def verify_call_support_payment():
+    data = request.get_json()
+    booking = CallSupportBooking.query.get_or_404(data.get('booking_id'))
+
+    if booking.user_id != current_user.id:
+        return jsonify({'success': False, 'error': 'Not your booking'}), 403
+
+    try:
+        razorpay_client.utility.verify_payment_signature({
+            'razorpay_order_id': data.get('razorpay_order_id'),
+            'razorpay_payment_id': data.get('razorpay_payment_id'),
+            'razorpay_signature': data.get('razorpay_signature'),
+        })
+        booking.razorpay_payment_id = data.get('razorpay_payment_id')
+        booking.status = 'paid'
+        db.session.commit()
+        return jsonify({'success': True, 'phone': SUPPORT_PHONE_NUMBER})
+    except razorpay.errors.SignatureVerificationError:
+        booking.status = 'failed'
+        db.session.commit()
+        return jsonify({'success': False, 'error': 'Payment verification failed'}), 400
+
+
+# ---------------------------------------------------------------------------
 # Support ticket routes
 # ---------------------------------------------------------------------------
 
@@ -284,17 +457,29 @@ def tickets():
 @login_required
 def new_ticket():
     if request.method == 'POST':
+        serial = request.form.get('serial_number', '').strip()
+        unit = ProductUnit.query.filter_by(serial_number=serial).first() if serial else None
+        is_warranty = bool(unit and unit.is_under_warranty)
+
         ticket = Ticket(
             user_id=current_user.id,
             subject=request.form['subject'].strip(),
             description=request.form['description'].strip(),
             priority=request.form.get('priority', 'normal'),
+            is_warranty=is_warranty,
+            serial_number=serial or None,
         )
         db.session.add(ticket)
         db.session.commit()
-        flash('Your ticket has been submitted.', 'success')
+        flash(
+            'Your free warranty support ticket has been submitted.' if is_warranty
+            else 'Your ticket has been submitted.',
+            'success'
+        )
         return redirect(url_for('ticket_detail', ticket_id=ticket.id))
-    return render_template('new_ticket.html')
+
+    prefill_serial = request.args.get('serial_number', '')
+    return render_template('new_ticket.html', prefill_serial=prefill_serial)
 
 
 @app.route('/tickets/<int:ticket_id>', methods=['GET', 'POST'])
@@ -345,7 +530,9 @@ def seed():
     print('Seed complete. Staff login: staff@servicehub.test / staffpass123')
 
 
+with app.app_context():
+    db.create_all()
+
+
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
     app.run(debug=True, host='0.0.0.0', port=5000)

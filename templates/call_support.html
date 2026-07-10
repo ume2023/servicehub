@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% block title %}Call Support &mdash; ServiceHub{% endblock %}
+{% block container_extra %} narrow{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <h1>Book call support</h1>
+  <p>Pay &#8377;{{ '%.0f'|format(price_rupees) }} to unlock a direct phone number and get a callback from our support team.</p>
+</div>
+
+<div class="card">
+  <div class="form-group">
+    <label>What do you need help with?</label>
+    <textarea id="notes" placeholder="e.g. Calibrating the pressure sensor, error code showing on display..."></textarea>
+  </div>
+  <button id="pay-btn" class="btn btn-amber" style="width:100%;">Pay &#8377;{{ '%.0f'|format(price_rupees) }} &amp; get support number</button>
+  <div id="pay-status" style="margin-top:12px; font-size:14px;"></div>
+</div>
+
+{% if bookings %}
+<h3 style="margin-top:32px; font-size:17px;">Your bookings</h3>
+{% for b in bookings %}
+<div class="stub">
+  <div class="stub-tag">CS-{{ '%04d'|format(b.id) }}</div>
+  <div class="stub-main">
+    <h3>&#8377;{{ '%.0f'|format(b.amount_paise / 100) }}</h3>
+    <span class="badge badge-{{ b.status }}">{{ b.status }}</span>
+    <div class="meta">
+      <span>{{ b.created_at.strftime('%d %b %Y, %H:%M') }}</span>
+      {% if b.status == 'paid' %}<span style="color:var(--teal); font-weight:600;">Call: {{ support_phone if support_phone else 'Check your confirmation' }}</span>{% endif %}
+    </div>
+  </div>
+</div>
+{% endfor %}
+{% endif %}
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+document.getElementById('pay-btn').addEventListener('click', async function () {
+  const btn = this;
+  const statusEl = document.getElementById('pay-status');
+  btn.disabled = true;
+  statusEl.textContent = 'Setting up payment...';
+
+  try {
+    const notes = document.getElementById('notes').value;
+    const form = new FormData();
+    form.append('notes', notes);
+
+    const orderRes = await fetch("{{ url_for('create_call_support_order') }}", {
+      method: 'POST',
+      body: form,
+    });
+    const order = await orderRes.json();
+
+    const options = {
+      key: order.key_id,
+      amount: order.amount,
+      currency: 'INR',
+      name: 'ServiceHub',
+      description: 'Call support session',
+      order_id: order.order_id,
+      handler: async function (response) {
+        statusEl.textContent = 'Verifying payment...';
+        const verifyRes = await fetch("{{ url_for('verify_call_support_payment') }}", {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            booking_id: order.booking_id,
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature: response.razorpay_signature,
+          }),
+        });
+        const verify = await verifyRes.json();
+        if (verify.success) {
+          statusEl.innerHTML = '<strong style="color:#1F6F63;">Payment successful! Call us at: ' + verify.phone + '</strong>';
+          setTimeout(() => location.reload(), 2500);
+        } else {
+          statusEl.innerHTML = '<strong style="color:#B23A3A;">Payment could not be verified. Please contact support.</strong>';
+        }
+        btn.disabled = false;
+      },
+      modal: {
+        ondismiss: function () {
+          statusEl.textContent = '';
+          btn.disabled = false;
+        }
+      },
+      prefill: {
+        name: "{{ current_user.name }}",
+        email: "{{ current_user.email }}",
+      },
+      theme: { color: '#16232E' },
+    };
+
+    const rzp = new Razorpay(options);
+    rzp.open();
+    statusEl.textContent = '';
+  } catch (err) {
+    statusEl.innerHTML = '<strong style="color:#B23A3A;">Something went wrong. Please try again.</strong>';
+    btn.disabled = false;
+  }
+});
+</script>
+
+{% endblock %}

@@ -67,6 +67,52 @@ On your phone, open the site in Chrome (Android) or Safari (iOS) and choose **"A
        db.session.commit()
    ```
 
+## Setting up payments (Call Support feature)
+
+Your site now has a **paid call support** feature — customers pay, then get a phone number to call. This uses **Razorpay**, India's most common payment gateway (supports UPI, cards, netbanking, wallets — all through one integration).
+
+### Before this works for real money, you need:
+
+1. **A Razorpay account** — sign up free at **https://razorpay.com**
+2. **Complete KYC verification** (business details, bank account) — required before you can accept *real* payments. Until then, you can only use **Test Mode** (fake payments, for practicing).
+3. **Get your API keys**: Dashboard → Settings → API Keys → Generate Key. You'll get a **Key ID** and **Key Secret**.
+
+### Connecting your keys to the app
+
+Don't paste your keys directly into `app.py` (unsafe, especially once it's on GitHub, which is public). Instead, set them as **environment variables**:
+
+**On your computer (for testing):**
+```
+$env:RAZORPAY_KEY_ID="your_key_id_here"
+$env:RAZORPAY_KEY_SECRET="your_key_secret_here"
+```
+Run these before `python app.py` — you'll need to do this every time you open a new PowerShell window, or you can add them permanently via Windows System Environment Variables settings.
+
+**On Render (for your live site):**
+1. Go to your Web Service on Render → **"Environment"** tab
+2. Add two entries: `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` with your real values
+3. Save — Render will redeploy automatically
+
+### Also update this line in `app.py`:
+```python
+SUPPORT_PHONE_NUMBER = "+91-XXXXXXXXXX"
+```
+Change it to your real support phone number.
+
+### Test it safely first
+Use Razorpay's test mode (test API keys, not live ones) and their test card numbers before switching to live keys — see https://razorpay.com/docs/payments/payments/test-card-upi-details/. **Only switch to live keys once you've completed KYC and tested the full flow.**
+
+## Adding calibration videos
+
+1. Upload your calibration video to **YouTube** (set it to "Unlisted" if you don't want it publicly searchable — it'll still work when embedded on your site)
+2. On the YouTube video page: **Share → Embed → copy the URL inside `src="..."`** (looks like `https://www.youtube.com/embed/XXXXXXXXXXX`)
+3. Open `add_calibration_video.py` in Notepad, fill in the title, description, and that embed URL
+4. Run:
+   ```
+   python add_calibration_video.py
+   ```
+5. Repeat for each video
+
 ## What's included
 
 ```

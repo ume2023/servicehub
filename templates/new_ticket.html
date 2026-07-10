@@ -7,6 +7,10 @@
 
 <form method="post" class="card">
   <div class="form-group">
+    <label>Product serial number (optional — if under warranty, this is free)</label>
+    <input type="text" name="serial_number" value="{{ prefill_serial }}" placeholder="e.g. SN-2025-00123">
+  </div>
+  <div class="form-group">
     <label>Subject</label>
     <input type="text" name="subject" required placeholder="e.g. Order arrived damaged">
   </div>

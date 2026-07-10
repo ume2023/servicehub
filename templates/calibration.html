@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}Calibration Guides &mdash; ServiceHub{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <h1>Calibration guides</h1>
+  <p>Watch step-by-step videos on calibrating your equipment.</p>
+</div>
+
+{% if videos %}
+<div class="grid grid-3">
+  {% for v in videos %}
+  <div class="card">
+    <div style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden; border-radius:6px; margin-bottom:12px; background:#000;">
+      <iframe src="{{ v.video_url }}" style="position:absolute; top:0; left:0; width:100%; height:100%; border:0;" allowfullscreen loading="lazy"></iframe>
+    </div>
+    <h3 style="margin:0 0 6px; font-size:15px;">{{ v.title }}</h3>
+    <p style="color:var(--ink-soft); font-size:13px; margin:0;">{{ v.description }}</p>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty">
+  <h3>No calibration videos yet</h3>
+  <p>Check back soon, or contact support if you need help right away.</p>
+</div>
+{% endif %}
+
+<div class="card" style="margin-top:32px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+  <div>
+    <h3 style="margin:0 0 4px;">Need someone to walk you through it live?</h3>
+    <p style="margin:0; color:var(--ink-soft); font-size:14px;">Book a paid call with our support team.</p>
+  </div>
+  <a href="{{ url_for('call_support') if current_user.is_authenticated else url_for('login') }}" class="btn btn-amber">Book call support</a>
+</div>
+
+{% endblock %}

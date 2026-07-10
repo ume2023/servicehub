@@ -18,6 +18,7 @@
       <div class="stub-main">
         <h3>{{ t.subject }}</h3>
         <span class="badge badge-{{ t.status }}">{{ t.status.replace('_',' ') }}</span>
+        {% if t.is_warranty %}<span class="badge badge-resolved">Free &middot; Warranty</span>{% endif %}
         <div class="meta">
           <span>Priority: {{ t.priority }}</span>
           <span>Opened {{ t.created_at.strftime('%d %b %Y') }}</span>

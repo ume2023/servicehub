@@ -6,7 +6,9 @@
 <div class="page-header">
   <h1>{{ ticket.subject }}</h1>
   <span class="badge badge-{{ ticket.status }}">{{ ticket.status.replace('_',' ') }}</span>
+  {% if ticket.is_warranty %}<span class="badge badge-resolved">Free &middot; Warranty</span>{% endif %}
   <span style="font-size:13px; color:var(--ink-soft); margin-left:8px;">Priority: {{ ticket.priority }}</span>
+  {% if ticket.serial_number %}<div style="font-size:13px; color:var(--ink-soft); margin-top:4px;">Serial: {{ ticket.serial_number }}</div>{% endif %}
 </div>
 
 <div class="card" style="margin-bottom:20px;">
