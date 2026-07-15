@@ -6,8 +6,8 @@
   <p style="color:var(--ink-soft);">We offer 5 types of calibration: Length, Angle, Load, Duty, and No. of Falls. Check whether your unit is under warranty below.</p>
 
   <div style="display:flex; gap:10px; margin:20px 0;">
-    <button id="tab-under-btn" class="btn" onclick="showTab('under')" style="background:#000000; color:#ffffff;">Under Warranty</button>
-    <button id="tab-out-btn" class="btn" onclick="showTab('out')" style="background:#eee; color:#333;">Out of Warranty</button>
+<button id="tab-under-btn" class="btn" onclick="showTab('under')" style="background:#000000; color:#ffffff;">Under Warranty</button>
+<button id="tab-out-btn" class="btn" onclick="showTab('out')" style="background:#eee; color:#333;">Out of Warranty</button>
   </div>
 
   <div id="tab-under" class="calibration-tab">
@@ -63,13 +63,9 @@
 
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script>
-function showTab(tab) {
-  document.getElementById('tab-under').style.display = (tab === 'under') ? 'block' : 'none';
-  document.getElementById('tab-out').style.display = (tab === 'out') ? 'block' : 'none';
-  document.getElementById('tab-under-btn').style.background = (tab === 'under') ? '#000000' : '#eee';
+function  {
+ document.getElementById('tab-under-btn').style.background = (tab === 'under') ? '#000000' : '#eee';
   document.getElementById('tab-under-btn').style.color = (tab === 'under') ? '#ffffff' : '#333';
-  document.getElementById('tab-out-btn').style.background = (tab === 'out') ? '' : '#eee';
-  document.getElementById('tab-out-btn').style.color = (tab === 'out') ? '' : '#333';
 }
 
 {% if active_tab == 'out' %}showTab('out');{% endif %}

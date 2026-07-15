@@ -110,6 +110,41 @@ WIDGET_HTML = r"""<!--
     background: #2563eb;
     color: #fff;
   }
+  #chatbot-warranty {
+    padding: 10px 12px;
+    background: #eef4ff;
+    border-top: 1px solid #e5e9f2;
+    border-bottom: 1px solid #e5e9f2;
+  }
+  #chatbot-warranty label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: #2563eb;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    margin-bottom: 6px;
+  }
+  #chatbot-warranty-row {
+    display: flex;
+    gap: 6px;
+  }
+  #chatbot-warranty-input {
+    flex: 1;
+    border: 1px solid #cdd8ea;
+    border-radius: 6px;
+    padding: 6px 8px;
+    font-size: 13px;
+  }
+  #chatbot-warranty-btn {
+    border: none;
+    background: #2563eb;
+    color: #fff;
+    border-radius: 6px;
+    padding: 0 12px;
+    font-size: 13px;
+    cursor: pointer;
+  }
 </style>
 
 <button id="chatbot-bubble" aria-label="Chat with us">Chat</button>
@@ -120,8 +155,16 @@ WIDGET_HTML = r"""<!--
     <button id="chatbot-close">X</button>
   </div>
   <div id="chatbot-messages"></div>
+  <div id="chatbot-warranty">
+    <label>Quick Warranty Check</label>
+    <div id="chatbot-warranty-row">
+      <input id="chatbot-warranty-input" type="text" placeholder="e.g. D01260132" />
+      <button id="chatbot-warranty-btn">Check</button>
+    </div>
+  </div>
   <div id="chatbot-chips">
     <button class="chatbot-chip" data-msg="products list">Products &amp; Prices</button>
+    <button class="chatbot-chip" data-msg="check warranty">Check Warranty</button>
     <button class="chatbot-chip" data-msg="length calibration">Length Calibration</button>
     <button class="chatbot-chip" data-msg="angle calibration">Angle Calibration</button>
     <button class="chatbot-chip" data-msg="load calibration">Load Calibration</button>
@@ -193,6 +236,25 @@ WIDGET_HTML = r"""<!--
       input.value = chip.getAttribute('data-msg');
       sendMessage();
     });
+  });
+
+  var warrantyInput = document.getElementById('chatbot-warranty-input');
+  var warrantyBtn = document.getElementById('chatbot-warranty-btn');
+
+  function sendWarrantyCheck() {
+    var unitNumber = warrantyInput.value.trim();
+    if (!unitNumber) return;
+    if (!win.classList.contains('open')) {
+      win.classList.add('open');
+    }
+    input.value = unitNumber;
+    sendMessage();
+    warrantyInput.value = '';
+  }
+
+  warrantyBtn.addEventListener('click', sendWarrantyCheck);
+  warrantyInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') sendWarrantyCheck();
   });
 })();
 </script>

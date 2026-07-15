@@ -1,0 +1,2 @@
+cd C:\Users\EBL_SALES\Downloads\servicehub\servicehub5\servicehub
+python app.py

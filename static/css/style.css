@@ -1,10 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap');
 
 :root {
-  --navy: #16232E;
-  --navy-light: #24384A;
-  --paper: #EEF1EF;
-  --paper-dim: #E2E6E3;
+  --navy: #3B9FE0;       /* was #16232E — now sky blue */
+  --navy-light: #5CB3E8; /* was #24384A — lighter sky blue for hover states */
+  --paper: #FFFFFF;      /* was #EEF1EF — now white */
+  --paper-dim: #F0F7FC;  /* was #E2E6E3 — very light blue-white for subtle contrast */
   --amber: #D98E04;
   --amber-dark: #B87500;
   --teal: #1F6F63;
@@ -59,15 +59,13 @@ a { color: inherit; text-decoration: none; }
 .brand-fallback { display: none; align-items: center; gap: 8px; }
 .brand .mark {
   width: 10px; height: 10px;
-  background: var(--amber);
+  background: #000000;
   border-radius: 2px;
   display: inline-block;
 }
 
-.nav-links { display: flex; gap: 22px; align-items: center; font-size: 14px; font-weight: 500; }
-.nav-links a { color: #C7D0D6; transition: color .15s; }
+.nav-links a { color: #000000; transition: color .15s; }
 .nav-links a:hover { color: #fff; }
-
 .nav-cta {
   background: var(--amber);
   color: var(--navy) !important;

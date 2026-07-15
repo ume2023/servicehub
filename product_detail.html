@@ -20,7 +20,7 @@
         <label>Quantity</label>
         <input type="number" name="quantity" value="1" min="1" max="{{ product.stock }}" style="width:90px;">
       </div>
-      <button class="btn btn-amber" type="submit" {% if product.stock == 0 %}disabled{% endif %} style="background:#000000; color:#ffffff;">Add to cart</button>
+      <button class="btn btn-amber" type="submit" {% if product.stock == 0 %}disabled{% endif %}>Add to cart</button>
     </form>
   </div>
 </div>

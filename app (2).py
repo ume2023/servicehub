@@ -1,5 +1,4 @@
 import os
-import re
 from datetime import datetime, date
 from flask import Flask, render_template, redirect, url_for, request, flash, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
@@ -31,13 +30,6 @@ CALIBRATION_BASE_AMOUNT = 1800.00
 CALIBRATION_GST_RATE = 0.18
 CALIBRATION_GST_AMOUNT = round(CALIBRATION_BASE_AMOUNT * CALIBRATION_GST_RATE, 2)
 CALIBRATION_TOTAL_AMOUNT = round(CALIBRATION_BASE_AMOUNT + CALIBRATION_GST_AMOUNT, 2)
-
-# Call support: same pricing structure as calibration
-SUPPORT_PHONE_NUMBER = "+91-XXXXXXXXXX"  # TODO: change this to your real support number
-CALL_SUPPORT_BASE_AMOUNT = 1800.00
-CALL_SUPPORT_GST_RATE = 0.18
-CALL_SUPPORT_GST_AMOUNT = round(CALL_SUPPORT_BASE_AMOUNT * CALL_SUPPORT_GST_RATE, 2)
-CALL_SUPPORT_TOTAL_AMOUNT = round(CALL_SUPPORT_BASE_AMOUNT + CALL_SUPPORT_GST_AMOUNT, 2)
 
 
 def parse_unit_number(unit_number):
@@ -501,51 +493,19 @@ def products_list_reply() -> str:
     return "Here's what we have available:\n" + "\n".join(lines)
 
 
-# Matches unit numbers like D01260132: one letter followed by 4-9 digits
-UNIT_NUMBER_PATTERN = re.compile(r'^[A-Za-z]\d{4,9}$')
-
-
-def warranty_chat_reply(unit_number: str) -> str:
-    result = check_unit_warranty(unit_number)
-    if not result['valid']:
-        return result['error']
-
-    status = "UNDER WARRANTY" if result['under_warranty'] else "OUT OF WARRANTY"
-    lines = [
-        f"Unit Number: {result['unit_number']}",
-        f"Manufacturing Date: {result['manufacture_date'].strftime('%d %B %Y')}",
-        f"Warranty Valid Until: {result['warranty_end'].strftime('%d %B %Y')}",
-        f"Status: {status}",
-    ]
-    if result['under_warranty']:
-        lines.append("This unit is covered — raise a support ticket to schedule your free calibration.")
-    else:
-        lines.append("This unit is out of warranty — visit the Calibration page's 'Out of Warranty' tab to pay and book a technician.")
-    return "\n".join(lines)
-
-
 def chatbot_reply(message: str) -> str:
     text = message.lower()
-    stripped = message.strip()
 
-    # 1. A message that IS a unit number on its own (e.g. "D01260132")
-    if UNIT_NUMBER_PATTERN.match(stripped):
-        return warranty_chat_reply(stripped)
-
-    # 2. Explicit warranty-check request without a unit number yet
-    if any(kw in text for kw in ["check warranty", "check my warranty", "warranty status", "under warranty", "is my unit"]):
-        return ("Sure! Please type your unit number (e.g. D01260132) and I'll check it for you.")
-
-    # 3. Products list request
+    # 1. Products list request
     if any(kw in text for kw in ["products list", "all products", "price list", "parts available", "what do you sell"]):
         return products_list_reply()
 
-    # 4. Specific calibration subsection (checked before generic product/keyword match)
+    # 2. Specific calibration subsection (checked before generic product/keyword match)
     for keywords, title, reply in CALIBRATION_INFO:
         if any(kw in text for kw in keywords):
             return f"{title}: {reply}"
 
-    # 5. Try to match a product name from the database
+    # 3. Try to match a product name from the database
     products = Product.query.all()
     for product in products:
         if product.name.lower() in text:
@@ -555,12 +515,12 @@ def chatbot_reply(message: str) -> str:
                 f"{'In stock.' if product.stock and product.stock > 0 else 'Currently out of stock.'}"
             ).strip()
 
-    # 6. Try general keyword rules
+    # 4. Try general keyword rules
     for keywords, reply in CHATBOT_RULES:
         if any(kw in text for kw in keywords):
             return reply
 
-    # 7. Fallback
+    # 5. Fallback
     return DEFAULT_REPLY
 
 
@@ -652,54 +612,21 @@ def calibration_verify_payment():
     except Exception:
         return jsonify({"status": "failed", "message": "Payment verification failed. Please contact support."}), 400
 
-@app.route('/check-warranty')
-def check_warranty():
-    return redirect(url_for('calibration'))
-
-
 @app.route('/call-support')
 def call_support():
-    return render_template('call_support.html')
+    return PLACEHOLDER_PAGE.format(title="Call Support")
 
+@app.route('/check-warranty')
+def check_warranty():
+    return PLACEHOLDER_PAGE.format(title="Check Warranty")
 
 @app.route('/call-support/create-order', methods=['POST'])
 def create_call_support_order():
-    if not razorpay_client:
-        return jsonify({"error": "Online payment isn't set up yet. Please raise a support ticket instead."}), 503
-
-    amount_paise = int(CALL_SUPPORT_TOTAL_AMOUNT * 100)
-    order = razorpay_client.order.create({
-        "amount": amount_paise,
-        "currency": "INR",
-        "payment_capture": 1,
-    })
-    return jsonify({
-        "order_id": order["id"],
-        "amount": amount_paise,
-        "currency": "INR",
-        "key_id": RAZORPAY_KEY_ID,
-    })
-
+    return PLACEHOLDER_PAGE.format(title="Call Support Order")
 
 @app.route('/call-support/verify-payment', methods=['POST'])
 def verify_call_support_payment():
-    if not razorpay_client:
-        return jsonify({"status": "failed", "message": "Online payment isn't set up yet."}), 503
-
-    data = request.get_json(silent=True) or {}
-    try:
-        razorpay_client.utility.verify_payment_signature({
-            'razorpay_order_id': data.get('razorpay_order_id'),
-            'razorpay_payment_id': data.get('razorpay_payment_id'),
-            'razorpay_signature': data.get('razorpay_signature'),
-        })
-        return jsonify({
-            "status": "success",
-            "message": f"Payment received! Call our support line now: {SUPPORT_PHONE_NUMBER}",
-            "phone": SUPPORT_PHONE_NUMBER,
-        })
-    except Exception:
-        return jsonify({"status": "failed", "message": "Payment verification failed. Please contact support."}), 400
+    return PLACEHOLDER_PAGE.format(title="Payment Verification")
 
 
 @app.cli.command('seed')
